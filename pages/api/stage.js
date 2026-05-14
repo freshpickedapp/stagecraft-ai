@@ -7,10 +7,11 @@ export const config = { api: { bodyParser: false } };
 
 const NEGATIVE_PROMPT =
   'cartoon, illustrated, watermark, text, people, pets, animals, ' +
-  'changed wall color, changed flooring, changed ceiling, altered windows, ' +
+  'different wall color, repainted walls, new flooring, different floor, renovated, ' +
+  'different ceiling, altered windows, new windows, changed architecture, ' +
   'distorted architecture, fisheye lens, wide angle distortion, oversaturated, ' +
   'unrealistic lighting, cheap furniture, cluttered, messy, blurry, low quality, ' +
-  'extra rooms, merged rooms, floating furniture';
+  'extra rooms, merged rooms, floating furniture, room redesign, remodeled';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -44,7 +45,7 @@ export default async function handler(req, res) {
 
   const formData = new FormData();
   formData.append('init_image', imageBuffer, { filename: 'room.jpg', contentType: 'image/jpeg' });
-  formData.append('image_strength', '0.40');
+  formData.append('image_strength', '0.80');
   formData.append('cfg_scale', '7');
   formData.append('steps', '45');
   formData.append('sampler', 'K_DPMPP_2M');

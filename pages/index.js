@@ -1,31 +1,33 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import Head from 'next/head';
 
+const BASE_SUFFIX = ', same wall color, same flooring, same ceiling, same windows, identical room architecture, only furniture added, professional real estate photography, photorealistic, natural window lighting, interior design magazine quality, 8k, shot on Canon 5D Mark IV';
+
 const STAGING_STYLES = [
   {
     id: 'modern', name: 'Modern', emoji: '◆', color: 'from-slate-400 to-slate-600',
     description: 'Clean lines, neutral tones',
-    prompt: 'professional real estate interior photography, minimalist modern, clean lines, neutral tones, warm whites, Restoration Hardware aesthetic staged room, photorealistic furniture, natural lighting matching existing windows, 8k resolution, shot on Canon 5D Mark IV, interior design magazine quality, hyperrealistic, physically accurate shadows, premium finishes',
+    prompt: 'existing room with modern contemporary furniture added: low-profile sofa, glass coffee table, accent chair, floor lamp, abstract wall art, neutral area rug' + BASE_SUFFIX,
   },
   {
     id: 'rustic', name: 'Rustic', emoji: '⌂', color: 'from-orange-300 to-amber-600',
     description: 'Warm farmhouse, Pottery Barn',
-    prompt: 'professional real estate interior photography, warm rustic farmhouse, exposed wood accents, linen textures, Pottery Barn aesthetic staged room, photorealistic furniture, natural lighting matching existing windows, 8k resolution, shot on Canon 5D Mark IV, interior design magazine quality, hyperrealistic, physically accurate shadows, premium finishes',
+    prompt: 'existing room with rustic farmhouse furniture added: linen sofa, reclaimed wood coffee table, Edison floor lamp, woven rug, dried floral arrangement, warm wood accents' + BASE_SUFFIX,
   },
   {
     id: 'luxury', name: 'Luxury', emoji: '✦', color: 'from-yellow-500 to-amber-700',
     description: 'High-end, Architectural Digest',
-    prompt: 'professional real estate interior photography, high end luxury, marble accents, designer furniture, Architectural Digest aesthetic staged room, photorealistic furniture, natural lighting matching existing windows, 8k resolution, shot on Canon 5D Mark IV, interior design magazine quality, hyperrealistic, physically accurate shadows, premium finishes',
+    prompt: 'existing room with luxury designer furniture added: tufted velvet sofa, marble side tables, designer floor lamp, silk rug, large fine art, gold accents, fresh orchids' + BASE_SUFFIX,
   },
   {
     id: 'scandinavian', name: 'Scandinavian', emoji: '❄', color: 'from-sky-200 to-blue-400',
-    description: 'White & light wood, IKEA hygge',
-    prompt: 'professional real estate interior photography, Scandinavian minimal, white and light wood, cozy hygge, IKEA aesthetic staged room, photorealistic furniture, natural lighting matching existing windows, 8k resolution, shot on Canon 5D Mark IV, interior design magazine quality, hyperrealistic, physically accurate shadows, premium finishes',
+    description: 'White & light wood, cozy hygge',
+    prompt: 'existing room with Scandinavian furniture added: birch wood sofa with linen cushions, sheepskin throw, low wood coffee table, pendant lamp, small potted plant' + BASE_SUFFIX,
   },
   {
     id: 'vacant', name: 'Vacant', emoji: '□', color: 'from-gray-200 to-gray-400',
     description: 'Empty, professionally cleaned',
-    prompt: 'professional real estate interior photography, vacant room, completely empty, no furniture, professionally cleaned, bare walls staged room, photorealistic, natural lighting matching existing windows, 8k resolution, shot on Canon 5D Mark IV, interior design magazine quality, hyperrealistic, physically accurate shadows',
+    prompt: 'same room completely empty, all furniture removed, pristine bare floors, clean walls, no objects, vacant listing photo, same wall color, same flooring, same ceiling, same windows, professional real estate photography, 8k',
   },
 ];
 
