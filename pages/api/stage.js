@@ -24,53 +24,76 @@ export default async function handler(req, res) {
   const prompt = fields.prompt?.[0];
   if (!prompt) return res.status(400).json({ error: 'Prompt required.' });
 
-  let imageBuffer, maskBuffer;
+  const SIZE = 1024;
+
+  // Resize original to square PNG
+  let originalBuffer;
   try {
-    imageBuffer = await sharp(imageFile.filepath)
-      .resize(1024, 1024, { fit: 'cover' })
+    originalBuffer = await sharp(imageFile.filepath)
+      .resize(SIZE, SIZE, { fit: 'cover' })
       .png()
       .toBuffer();
-
-    // Opaque (alpha=255) = preserve, Transparent (alpha=0) = AI edits
-    // Top 45%: fully opaque (ceiling, windows, upper walls locked)
-    // 45–62%: gradient transition
-    // Bottom 62%+: fully transparent (furniture placement zone)
-    maskBuffer = await generateMask(1024, 1024);
   } catch {
     return res.status(400).json({ error: 'Could not process image.' });
   }
 
+  // Mask for OpenAI: transparent = editable, opaque = preserve
+  // Only open up the bottom 55% for furniture placement
+  const maskBuffer = await generateMask(SIZE, SIZE);
+
+  let aiBuffer;
   try {
     const openai = new OpenAI({ apiKey });
-
     const response = await openai.images.edit({
       model: 'gpt-image-1',
-      image: await toFile(imageBuffer, 'room.png', { type: 'image/png' }),
+      image: await toFile(originalBuffer, 'room.png', { type: 'image/png' }),
       mask: await toFile(maskBuffer, 'mask.png', { type: 'image/png' }),
       prompt,
       size: '1024x1024',
       quality: 'high',
     });
-
-    const base64 = response.data[0].b64_json;
-    res.json({ image: `data:image/png;base64,${base64}` });
+    aiBuffer = Buffer.from(response.data[0].b64_json, 'base64');
   } catch (err) {
     const status = err.status;
     const msg = err.message;
     if (status === 401) return res.status(401).json({ error: 'Invalid OpenAI API key.' });
     if (status === 429) return res.status(429).json({ error: 'Rate limit reached. Try again in a moment.' });
     if (status === 400) return res.status(400).json({ error: `Bad request: ${msg}` });
-    res.status(500).json({ error: `Generation failed: ${msg}` });
+    return res.status(500).json({ error: `Generation failed: ${msg}` });
+  }
+
+  // Hard composite: paste original's upper zone back over the AI output pixel-for-pixel.
+  // This guarantees ceiling, windows, walls above the seam are IDENTICAL to the upload.
+  try {
+    const SEAM = Math.round(SIZE * 0.45); // 461px — top of furniture zone
+
+    // Extract upper portion from the original
+    const upperOriginal = await sharp(originalBuffer)
+      .extract({ left: 0, top: 0, width: SIZE, height: SEAM })
+      .png()
+      .toBuffer();
+
+    // Paste it onto the AI output at position 0,0
+    const finalBuffer = await sharp(aiBuffer)
+      .composite([{ input: upperOriginal, top: 0, left: 0 }])
+      .png()
+      .toBuffer();
+
+    const base64 = finalBuffer.toString('base64');
+    res.json({ image: `data:image/png;base64,${base64}` });
+  } catch {
+    res.status(500).json({ error: 'Could not composite final image.' });
   }
 }
 
-async function generateMask(width, height) {
+// OpenAI mask: opaque (alpha=255) = preserve, transparent (alpha=0) = AI edits
+function generateMask(width, height) {
   const pixels = Buffer.alloc(width * height * 4);
   for (let y = 0; y < height; y++) {
     const ratio = y / height;
     let alpha;
-    if (ratio < 0.45) alpha = 255;
-    else if (ratio > 0.62) alpha = 0;
+    if (ratio < 0.45) alpha = 255;       // preserve top 45%
+    else if (ratio > 0.62) alpha = 0;    // AI fills bottom 38%
     else alpha = Math.round(255 * (1 - (ratio - 0.45) / 0.17));
     for (let x = 0; x < width; x++) {
       const i = (y * width + x) * 4;
