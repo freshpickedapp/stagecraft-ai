@@ -1,33 +1,36 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import Head from 'next/head';
 
-const BASE_SUFFIX = ', same wall color, same flooring, same ceiling, same windows, identical room architecture, only furniture added, professional real estate photography, photorealistic, natural window lighting, interior design magazine quality, 8k, shot on Canon 5D Mark IV';
+const BASE =
+  'same room architecture, identical wall color, identical flooring, identical ceiling, identical windows, ' +
+  'professionally staged real estate photo, photorealistic furniture placed in room, natural window lighting, ' +
+  'interior design magazine quality, 8k, shot on Canon 5D Mark IV';
 
 const STAGING_STYLES = [
   {
     id: 'modern', name: 'Modern', emoji: '◆', color: 'from-slate-400 to-slate-600',
     description: 'Clean lines, neutral tones',
-    prompt: 'existing room with modern contemporary furniture added: low-profile sofa, glass coffee table, accent chair, floor lamp, abstract wall art, neutral area rug' + BASE_SUFFIX,
+    prompt: `${BASE}, modern contemporary staging: large gray sectional sofa against wall, rectangular glass and walnut coffee table on floor, accent armchair, tall arc floor lamp, large framed abstract art on wall, neutral wool area rug covering floor`,
   },
   {
     id: 'rustic', name: 'Rustic', emoji: '⌂', color: 'from-orange-300 to-amber-600',
     description: 'Warm farmhouse, Pottery Barn',
-    prompt: 'existing room with rustic farmhouse furniture added: linen sofa, reclaimed wood coffee table, Edison floor lamp, woven rug, dried floral arrangement, warm wood accents' + BASE_SUFFIX,
+    prompt: `${BASE}, rustic farmhouse staging: cream linen sofa, reclaimed barnwood coffee table on floor, Edison bulb floor lamp, cotton throw blanket draped on sofa, woven jute rug, dried eucalyptus arrangement on table`,
   },
   {
     id: 'luxury', name: 'Luxury', emoji: '✦', color: 'from-yellow-500 to-amber-700',
     description: 'High-end, Architectural Digest',
-    prompt: 'existing room with luxury designer furniture added: tufted velvet sofa, marble side tables, designer floor lamp, silk rug, large fine art, gold accents, fresh orchids' + BASE_SUFFIX,
+    prompt: `${BASE}, luxury high-end staging: deep navy velvet tufted sofa, white marble side tables, brushed gold designer floor lamp, large abstract oil painting on wall, plush silk area rug, fresh white orchid arrangement`,
   },
   {
     id: 'scandinavian', name: 'Scandinavian', emoji: '❄', color: 'from-sky-200 to-blue-400',
     description: 'White & light wood, cozy hygge',
-    prompt: 'existing room with Scandinavian furniture added: birch wood sofa with linen cushions, sheepskin throw, low wood coffee table, pendant lamp, small potted plant' + BASE_SUFFIX,
+    prompt: `${BASE}, Scandinavian minimal staging: white sofa with light birch legs, sheepskin throw, low natural birch coffee table on floor, simple linen pendant lamp, small fiddle leaf fig plant, light gray area rug`,
   },
   {
     id: 'vacant', name: 'Vacant', emoji: '□', color: 'from-gray-200 to-gray-400',
     description: 'Empty, professionally cleaned',
-    prompt: 'same room completely empty, all furniture removed, pristine bare floors, clean walls, no objects, vacant listing photo, same wall color, same flooring, same ceiling, same windows, professional real estate photography, 8k',
+    prompt: 'identical room completely empty, zero furniture, zero objects, bare clean floor, clean bare walls, vacant listing photography, same wall color, same flooring, same ceiling, same windows, 8k professional real estate photo',
   },
 ];
 

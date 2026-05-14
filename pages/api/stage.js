@@ -45,7 +45,7 @@ export default async function handler(req, res) {
 
   const formData = new FormData();
   formData.append('init_image', imageBuffer, { filename: 'room.jpg', contentType: 'image/jpeg' });
-  formData.append('image_strength', '0.80');
+  formData.append('image_strength', '0.60');
   formData.append('cfg_scale', '7');
   formData.append('steps', '45');
   formData.append('sampler', 'K_DPMPP_2M');
