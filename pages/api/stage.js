@@ -13,12 +13,11 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const apiKey =
-    req.headers['x-api-key'] || process.env.STABILITY_API_KEY;
+  const apiKey = process.env.STABILITY_API_KEY;
 
   if (!apiKey) {
-    return res.status(401).json({
-      error: 'Stability AI API key required. Add your key in Settings.',
+    return res.status(500).json({
+      error: 'STABILITY_API_KEY is not set. Add it in your Vercel environment variables.',
     });
   }
 

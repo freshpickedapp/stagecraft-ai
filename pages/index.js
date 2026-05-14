@@ -112,9 +112,6 @@ function CompareSlider({ beforeUrl, afterUrl }) {
 }
 
 export default function Home() {
-  const [apiKey, setApiKey] = useState('');
-  const [showSettings, setShowSettings] = useState(false);
-  const [apiInput, setApiInput] = useState('');
   const [originalImage, setOriginalImage] = useState(null);
   const [selectedStyleId, setSelectedStyleId] = useState('modern');
   const [strength, setStrength] = useState('0.80');
@@ -131,23 +128,10 @@ export default function Home() {
   const view = isGenerating ? 'generating' : activeResultId && activeResult ? 'result' : originalImage ? 'configure' : 'upload';
 
   useEffect(() => {
-    const k = localStorage.getItem('stagecraft_key') || '';
-    setApiKey(k);
-    setApiInput(k);
-  }, []);
-
-  useEffect(() => {
     if (!isGenerating) return;
     const t = setInterval(() => setMsgIndex((i) => (i + 1) % LOADING_MSGS.length), 3000);
     return () => clearInterval(t);
   }, [isGenerating]);
-
-  const saveKey = () => {
-    const k = apiInput.trim();
-    setApiKey(k);
-    localStorage.setItem('stagecraft_key', k);
-    setShowSettings(false);
-  };
 
   const handleFile = useCallback((file) => {
     if (!file?.type.startsWith('image/')) return;
@@ -158,7 +142,6 @@ export default function Home() {
   }, []);
 
   const handleGenerate = async () => {
-    if (!apiKey) { setShowSettings(true); return; }
     setIsGenerating(true);
     setError(null);
     setMsgIndex(0);
@@ -170,7 +153,7 @@ export default function Home() {
       fd.append('negative_prompt', selectedStyle.negative);
       fd.append('control_strength', strength);
 
-      const res = await fetch('/api/stage', { method: 'POST', headers: { 'x-api-key': apiKey }, body: fd });
+      const res = await fetch('/api/stage', { method: 'POST', body: fd });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Generation failed');
 
@@ -198,16 +181,9 @@ export default function Home() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 
-      {/* Header */}
       <header className="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-gray-100">
-        <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-4 h-14 flex items-center">
           <span className="font-bold text-gray-900">StageCraft <span className="text-blue-700">AI</span></span>
-          <div className="flex items-center gap-3">
-            {apiKey && <span className="hidden sm:flex items-center gap-1.5 text-xs text-green-700 bg-green-50 px-2.5 py-1 rounded-full font-medium"><span className="w-1.5 h-1.5 bg-green-500 rounded-full" />Key set</span>}
-            <button onClick={() => { setApiInput(apiKey); setShowSettings(true); }} className="text-sm text-gray-600 hover:text-gray-900 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors">
-              {apiKey ? 'Settings' : '⚠️ Add API Key'}
-            </button>
-          </div>
         </div>
       </header>
 
@@ -287,7 +263,6 @@ export default function Home() {
                 <button onClick={handleGenerate} className="w-full py-3.5 bg-blue-700 hover:bg-blue-800 text-white font-bold rounded-2xl text-base shadow-lg shadow-blue-200/60 transition-all">
                   Generate {selectedStyle?.name} Staging →
                 </button>
-                {!apiKey && <p className="text-center text-sm text-amber-600 mt-2">⚠️ Add your <button onClick={() => setShowSettings(true)} className="underline font-semibold">Stability AI key</button> first</p>}
               </div>
             </div>
           </div>
@@ -341,30 +316,6 @@ export default function Home() {
           </div>
         )}
       </main>
-
-      {/* Settings modal */}
-      {showSettings && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowSettings(false)}>
-          <div className="bg-white rounded-2xl p-7 max-w-sm w-full shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-lg font-bold text-gray-900 mb-1">Stability AI Key</h2>
-            <p className="text-sm text-gray-500 mb-4">Get a key at <a href="https://platform.stability.ai/account/keys" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">platform.stability.ai</a></p>
-            <input
-              type="password"
-              value={apiInput}
-              onChange={(e) => setApiInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && saveKey()}
-              placeholder="sk-..."
-              autoFocus
-              className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 mb-1"
-            />
-            <p className="text-xs text-gray-400 mb-4">🔒 Saved in your browser only</p>
-            <div className="flex gap-2">
-              <button onClick={() => setApiInput('')} className="px-4 py-2 border border-gray-200 text-gray-600 rounded-xl text-sm hover:bg-gray-50">Clear</button>
-              <button onClick={saveKey} className="flex-1 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-xl text-sm font-semibold">Save</button>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }
