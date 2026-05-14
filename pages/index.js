@@ -4,51 +4,28 @@ import Head from 'next/head';
 const STAGING_STYLES = [
   {
     id: 'modern', name: 'Modern', emoji: '◆', color: 'from-slate-400 to-slate-600',
-    description: 'Clean lines, neutral palette',
-    prompt: 'modern contemporary furniture added to room: sleek low-profile sofa, glass and steel coffee table, accent chair, tall floor lamp, large framed abstract wall art, neutral wool area rug, small indoor plant, tastefully staged for real estate, photorealistic',
-    negative: 'people, text, watermark, blurry, distorted, cartoon, changed walls, changed windows, different room, different floor',
+    description: 'Clean lines, neutral tones',
+    prompt: 'professional real estate interior photography, minimalist modern, clean lines, neutral tones, warm whites, Restoration Hardware aesthetic staged room, photorealistic furniture, natural lighting matching existing windows, 8k resolution, shot on Canon 5D Mark IV, interior design magazine quality, hyperrealistic, physically accurate shadows, premium finishes',
+  },
+  {
+    id: 'rustic', name: 'Rustic', emoji: '⌂', color: 'from-orange-300 to-amber-600',
+    description: 'Warm farmhouse, Pottery Barn',
+    prompt: 'professional real estate interior photography, warm rustic farmhouse, exposed wood accents, linen textures, Pottery Barn aesthetic staged room, photorealistic furniture, natural lighting matching existing windows, 8k resolution, shot on Canon 5D Mark IV, interior design magazine quality, hyperrealistic, physically accurate shadows, premium finishes',
   },
   {
     id: 'luxury', name: 'Luxury', emoji: '✦', color: 'from-yellow-500 to-amber-700',
-    description: 'Opulent, high-end elegance',
-    prompt: 'luxury high-end furniture added to room: tufted velvet sofa, marble side tables, designer floor lamp, expensive silk area rug, large fine art canvas on wall, fresh orchid arrangement, gold accents, opulently staged for luxury real estate, photorealistic',
-    negative: 'people, text, watermark, blurry, distorted, cartoon, cheap, changed walls, changed windows, different room',
+    description: 'High-end, Architectural Digest',
+    prompt: 'professional real estate interior photography, high end luxury, marble accents, designer furniture, Architectural Digest aesthetic staged room, photorealistic furniture, natural lighting matching existing windows, 8k resolution, shot on Canon 5D Mark IV, interior design magazine quality, hyperrealistic, physically accurate shadows, premium finishes',
   },
   {
     id: 'scandinavian', name: 'Scandinavian', emoji: '❄', color: 'from-sky-200 to-blue-400',
-    description: 'Light wood, cozy hygge',
-    prompt: 'Scandinavian hygge furniture added to room: light birch wood sofa with linen cushions, sheepskin throw, knitted pillow, low natural wood coffee table, simple pendant lamp, small potted plant, cozy minimal staging for real estate, photorealistic',
-    negative: 'people, text, watermark, blurry, distorted, cartoon, dark, heavy, changed walls, changed windows, different room',
+    description: 'White & light wood, IKEA hygge',
+    prompt: 'professional real estate interior photography, Scandinavian minimal, white and light wood, cozy hygge, IKEA aesthetic staged room, photorealistic furniture, natural lighting matching existing windows, 8k resolution, shot on Canon 5D Mark IV, interior design magazine quality, hyperrealistic, physically accurate shadows, premium finishes',
   },
   {
-    id: 'farmhouse', name: 'Farmhouse', emoji: '⌂', color: 'from-orange-300 to-amber-600',
-    description: 'Rustic warmth, vintage charm',
-    prompt: 'rustic farmhouse furniture added to room: reclaimed wood coffee table, linen slipcovered sofa, vintage Edison bulb floor lamp, cotton throw blanket, wicker basket, dried flower arrangement, distressed wood accents, warmly staged for real estate, photorealistic',
-    negative: 'people, text, watermark, blurry, distorted, cartoon, modern, sleek, changed walls, changed windows, different room',
-  },
-  {
-    id: 'coastal', name: 'Coastal', emoji: '〰', color: 'from-cyan-300 to-blue-500',
-    description: 'Breezy beach-house vibes',
-    prompt: 'coastal beach house furniture added to room: rattan sofa with blue and white linen cushions, driftwood coffee table, jute area rug, tall tropical plant, sea glass decor on shelves, whitewashed side table, breezy staged for real estate, photorealistic',
-    negative: 'people, text, watermark, blurry, distorted, cartoon, dark, heavy, changed walls, changed windows, different room',
-  },
-  {
-    id: 'industrial', name: 'Industrial', emoji: '⚙', color: 'from-zinc-400 to-zinc-700',
-    description: 'Urban loft, raw materials',
-    prompt: 'industrial loft furniture added to room: dark leather sofa, reclaimed wood and metal coffee table, Edison bulb floor lamp, vintage distressed area rug, metal shelving unit with books, urban loft staging for real estate, photorealistic',
-    negative: 'people, text, watermark, blurry, distorted, cartoon, pastel, feminine, changed walls, changed windows, different room',
-  },
-  {
-    id: 'bohemian', name: 'Bohemian', emoji: '✿', color: 'from-rose-300 to-purple-500',
-    description: 'Eclectic, free-spirited',
-    prompt: 'bohemian eclectic furniture added to room: rattan sofa with colorful patterned cushions, macrame wall hanging, layered area rugs, tall leafy plant, woven floor pouf, ethnic-inspired side table, eclectic boho staging for real estate, photorealistic',
-    negative: 'people, text, watermark, blurry, distorted, cartoon, minimalist, sterile, changed walls, changed windows, different room',
-  },
-  {
-    id: 'empty', name: 'Empty Room', emoji: '□', color: 'from-gray-200 to-gray-400',
-    description: 'Clean, furniture-free',
-    prompt: 'completely empty clean room with no furniture, bare clean floor, no objects, no decoration, immaculate and pristine, professional real estate photography',
-    negative: 'furniture, objects, plants, decoration, people, text, watermark, blurry, distorted',
+    id: 'vacant', name: 'Vacant', emoji: '□', color: 'from-gray-200 to-gray-400',
+    description: 'Empty, professionally cleaned',
+    prompt: 'professional real estate interior photography, vacant room, completely empty, no furniture, professionally cleaned, bare walls staged room, photorealistic, natural lighting matching existing windows, 8k resolution, shot on Canon 5D Mark IV, interior design magazine quality, hyperrealistic, physically accurate shadows',
   },
 ];
 
@@ -114,7 +91,6 @@ function CompareSlider({ beforeUrl, afterUrl }) {
 export default function Home() {
   const [originalImage, setOriginalImage] = useState(null);
   const [selectedStyleId, setSelectedStyleId] = useState('modern');
-  const [strength, setStrength] = useState('0.80');
   const [results, setResults] = useState([]);
   const [activeResultId, setActiveResultId] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -150,8 +126,6 @@ export default function Home() {
       const fd = new FormData();
       fd.append('image', blob, 'room.jpg');
       fd.append('prompt', selectedStyle.prompt);
-      fd.append('negative_prompt', selectedStyle.negative);
-      fd.append('control_strength', strength);
 
       const res = await fetch('/api/stage', { method: 'POST', body: fd });
       const data = await res.json();
@@ -249,15 +223,6 @@ export default function Home() {
                       )}
                     </div>
                   ))}
-                </div>
-
-                <div className="mb-6">
-                  <p className="text-sm font-semibold text-gray-700 mb-2">Intensity</p>
-                  <div className="flex gap-2">
-                    {[{ v: '0.70', l: 'Subtle' }, { v: '0.80', l: 'Balanced ✦' }, { v: '0.88', l: 'Bold' }].map((o) => (
-                      <button key={o.v} onClick={() => setStrength(o.v)} className={`flex-1 py-2 rounded-xl text-sm font-medium border transition-all ${strength === o.v ? 'border-blue-500 bg-blue-50 text-blue-800' : 'border-gray-200 text-gray-600 hover:border-blue-200'}`}>{o.l}</button>
-                    ))}
-                  </div>
                 </div>
 
                 <button onClick={handleGenerate} className="w-full py-3.5 bg-blue-700 hover:bg-blue-800 text-white font-bold rounded-2xl text-base shadow-lg shadow-blue-200/60 transition-all">

@@ -5,6 +5,13 @@ import sharp from 'sharp';
 
 export const config = { api: { bodyParser: false } };
 
+const NEGATIVE_PROMPT =
+  'cartoon, illustrated, watermark, text, people, pets, animals, ' +
+  'changed wall color, changed flooring, changed ceiling, altered windows, ' +
+  'distorted architecture, fisheye lens, wide angle distortion, oversaturated, ' +
+  'unrealistic lighting, cheap furniture, cluttered, messy, blurry, low quality, ' +
+  'extra rooms, merged rooms, floating furniture';
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
@@ -23,50 +30,32 @@ export default async function handler(req, res) {
   if (!imageFile) return res.status(400).json({ error: 'No image provided.' });
 
   const prompt = fields.prompt?.[0];
-  const negativePrompt = fields.negative_prompt?.[0] || '';
   if (!prompt) return res.status(400).json({ error: 'Staging prompt required.' });
 
-  // Resize image to max 1024px, dimensions must be multiples of 64
-  let imageBuffer, imgW, imgH;
+  let imageBuffer;
   try {
-    const meta = await sharp(imageFile.filepath).metadata();
-    let w = meta.width, h = meta.height;
-    const maxDim = 1024;
-    if (w > maxDim || h > maxDim) {
-      if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
-      else { w = Math.round(w * maxDim / h); h = maxDim; }
-    }
-    // Round to nearest multiple of 64 (Stability AI requirement)
-    w = Math.round(w / 64) * 64;
-    h = Math.round(h / 64) * 64;
-
     imageBuffer = await sharp(imageFile.filepath)
-      .resize(w, h)
+      .resize(1024, 1024, { fit: 'cover' })
       .jpeg({ quality: 90 })
       .toBuffer();
-
-    imgW = w;
-    imgH = h;
   } catch {
     return res.status(400).json({ error: 'Could not process image.' });
   }
 
-  // Generate inpainting mask:
-  // Black (0)   = preserve exactly (upper room: ceiling, windows, upper walls)
-  // White (255) = AI fills here   (lower room: floor, furniture zone, lower walls)
-  // Smooth gradient transition in the middle to avoid harsh seams
-  const maskBuffer = await generateStagingMask(imgW, imgH);
-
   const formData = new FormData();
-  formData.append('image', imageBuffer, { filename: 'room.jpg', contentType: 'image/jpeg' });
-  formData.append('mask', maskBuffer, { filename: 'mask.png', contentType: 'image/png' });
-  formData.append('prompt', prompt);
-  formData.append('negative_prompt', negativePrompt || 'blurry, distorted, low quality, cartoon, people, text, watermark, changed walls, changed windows, different room');
-  formData.append('output_format', 'jpeg');
+  formData.append('init_image', imageBuffer, { filename: 'room.jpg', contentType: 'image/jpeg' });
+  formData.append('image_strength', '0.40');
+  formData.append('cfg_scale', '7');
+  formData.append('steps', '45');
+  formData.append('sampler', 'K_DPMPP_2M');
+  formData.append('text_prompts[0][text]', prompt);
+  formData.append('text_prompts[0][weight]', '1');
+  formData.append('text_prompts[1][text]', NEGATIVE_PROMPT);
+  formData.append('text_prompts[1][weight]', '-1');
 
   try {
     const response = await axios.post(
-      'https://api.stability.ai/v2beta/stable-image/edit/inpaint',
+      'https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/image-to-image',
       formData,
       {
         headers: {
@@ -78,7 +67,10 @@ export default async function handler(req, res) {
       }
     );
 
-    res.json({ image: `data:image/jpeg;base64,${response.data.image}` });
+    const artifact = response.data.artifacts?.[0];
+    if (!artifact?.base64) return res.status(500).json({ error: 'No image returned from API.' });
+
+    res.json({ image: `data:image/jpeg;base64,${artifact.base64}` });
   } catch (err) {
     const status = err.response?.status;
     const msg = err.response?.data?.message || err.response?.data?.errors?.[0] || err.message;
@@ -87,18 +79,4 @@ export default async function handler(req, res) {
     if (status === 429) return res.status(429).json({ error: 'Rate limit reached. Try again in a moment.' });
     res.status(500).json({ error: `Generation failed: ${msg}` });
   }
-}
-
-// Mask: top 30% black (preserve), bottom 50% white (add furniture), gradient between
-async function generateStagingMask(width, height) {
-  const pixels = Buffer.alloc(width * height);
-  for (let y = 0; y < height; y++) {
-    const ratio = y / height;
-    let v;
-    if (ratio < 0.30) v = 0;
-    else if (ratio > 0.58) v = 255;
-    else v = Math.round(((ratio - 0.30) / 0.28) * 255);
-    pixels.fill(v, y * width, (y + 1) * width);
-  }
-  return sharp(pixels, { raw: { width, height, channels: 1 } }).png().toBuffer();
 }
