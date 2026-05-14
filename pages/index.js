@@ -1,36 +1,33 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import Head from 'next/head';
 
-const BASE =
-  'same room architecture, identical wall color, identical flooring, identical ceiling, identical windows, ' +
-  'professionally staged real estate photo, photorealistic furniture placed in room, natural window lighting, ' +
-  'interior design magazine quality, 8k, shot on Canon 5D Mark IV';
+const ROOM_ANCHOR = 'Do not change the wall color, flooring, ceiling, windows, or any architectural features. Only add furniture and decor. Photorealistic, professional real estate photography, natural lighting.';
 
 const STAGING_STYLES = [
   {
     id: 'modern', name: 'Modern', emoji: '◆', color: 'from-slate-400 to-slate-600',
     description: 'Clean lines, neutral tones',
-    prompt: `${BASE}, modern contemporary staging: large gray sectional sofa against wall, rectangular glass and walnut coffee table on floor, accent armchair, tall arc floor lamp, large framed abstract art on wall, neutral wool area rug covering floor`,
+    prompt: `Stage this room with modern contemporary furniture. Add a large light gray sectional sofa against the main wall, a rectangular glass-top coffee table with walnut legs in the center of the room, a tan leather accent armchair, a tall brushed-steel arc floor lamp, a large abstract canvas on the wall, and a textured cream area rug. ${ROOM_ANCHOR}`,
   },
   {
     id: 'rustic', name: 'Rustic', emoji: '⌂', color: 'from-orange-300 to-amber-600',
     description: 'Warm farmhouse, Pottery Barn',
-    prompt: `${BASE}, rustic farmhouse staging: cream linen sofa, reclaimed barnwood coffee table on floor, Edison bulb floor lamp, cotton throw blanket draped on sofa, woven jute rug, dried eucalyptus arrangement on table`,
+    prompt: `Stage this room with rustic farmhouse furniture. Add a cream linen slipcovered sofa with cozy throw pillows, a reclaimed barnwood coffee table in the center, a vintage Edison-bulb floor lamp, a soft cotton throw blanket draped over the sofa, a woven jute area rug, and a dried eucalyptus arrangement on the table. ${ROOM_ANCHOR}`,
   },
   {
     id: 'luxury', name: 'Luxury', emoji: '✦', color: 'from-yellow-500 to-amber-700',
     description: 'High-end, Architectural Digest',
-    prompt: `${BASE}, luxury high-end staging: deep navy velvet tufted sofa, white marble side tables, brushed gold designer floor lamp, large abstract oil painting on wall, plush silk area rug, fresh white orchid arrangement`,
+    prompt: `Stage this room with luxury high-end furniture. Add a deep navy velvet tufted sofa, white marble side tables with brushed gold legs, a tall brushed-gold designer floor lamp, a large oil painting in a gold frame on the wall, a plush silk area rug, and a fresh white orchid arrangement. ${ROOM_ANCHOR}`,
   },
   {
     id: 'scandinavian', name: 'Scandinavian', emoji: '❄', color: 'from-sky-200 to-blue-400',
     description: 'White & light wood, cozy hygge',
-    prompt: `${BASE}, Scandinavian minimal staging: white sofa with light birch legs, sheepskin throw, low natural birch coffee table on floor, simple linen pendant lamp, small fiddle leaf fig plant, light gray area rug`,
+    prompt: `Stage this room with Scandinavian minimal furniture. Add a white sofa with light birch wooden legs and linen cushions, a sheepskin throw draped over one armrest, a low natural birch coffee table in the center, a simple white linen pendant lamp, a small fiddle leaf fig plant in a white pot, and a light gray area rug. ${ROOM_ANCHOR}`,
   },
   {
     id: 'vacant', name: 'Vacant', emoji: '□', color: 'from-gray-200 to-gray-400',
     description: 'Empty, professionally cleaned',
-    prompt: 'identical room completely empty, zero furniture, zero objects, bare clean floor, clean bare walls, vacant listing photography, same wall color, same flooring, same ceiling, same windows, 8k professional real estate photo',
+    prompt: 'Remove all furniture and objects from this room, leaving it completely empty. The walls, flooring, ceiling, and windows must remain exactly the same. The room should look professionally cleaned and vacant, ready for a real estate listing photo.',
   },
 ];
 
