@@ -1,28 +1,28 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import Head from 'next/head';
 
-const ROOM_ANCHOR = 'Do not change the wall color, flooring, ceiling, windows, or any architectural features. Only add furniture and decor. Photorealistic, professional real estate photography, natural lighting.';
+const ROOM_ANCHOR = 'Do not change the wall color, flooring, ceiling, windows, or any architectural features. Do not add any rugs or carpets. Only add furniture pieces. Photorealistic, professional real estate photography, natural lighting.';
 
 const STAGING_STYLES = [
   {
     id: 'modern', name: 'Modern', emoji: '◆', color: 'from-slate-400 to-slate-600',
     description: 'Clean lines, neutral tones',
-    prompt: `Stage this room with modern contemporary furniture. Add a large light gray sectional sofa against the main wall, a rectangular glass-top coffee table with walnut legs in the center of the room, a tan leather accent armchair, a tall brushed-steel arc floor lamp, a large abstract canvas on the wall, and a textured cream area rug. ${ROOM_ANCHOR}`,
+    prompt: `Stage this room with modern contemporary furniture. Add a large light gray sectional sofa against the main wall, a rectangular glass-top coffee table with walnut legs, a tan leather accent armchair, and a tall brushed-steel arc floor lamp. No rugs. ${ROOM_ANCHOR}`,
   },
   {
     id: 'rustic', name: 'Rustic', emoji: '⌂', color: 'from-orange-300 to-amber-600',
     description: 'Warm farmhouse, Pottery Barn',
-    prompt: `Stage this room with rustic farmhouse furniture. Add a cream linen slipcovered sofa with cozy throw pillows, a reclaimed barnwood coffee table in the center, a vintage Edison-bulb floor lamp, a soft cotton throw blanket draped over the sofa, a woven jute area rug, and a dried eucalyptus arrangement on the table. ${ROOM_ANCHOR}`,
+    prompt: `Stage this room with rustic farmhouse furniture. Add a cream linen slipcovered sofa with throw pillows, a reclaimed barnwood coffee table, a vintage Edison-bulb floor lamp, and a dried eucalyptus arrangement on the table. No rugs. ${ROOM_ANCHOR}`,
   },
   {
     id: 'luxury', name: 'Luxury', emoji: '✦', color: 'from-yellow-500 to-amber-700',
     description: 'High-end, Architectural Digest',
-    prompt: `Stage this room with luxury high-end furniture. Add a deep navy velvet tufted sofa, white marble side tables with brushed gold legs, a tall brushed-gold designer floor lamp, a large oil painting in a gold frame on the wall, a plush silk area rug, and a fresh white orchid arrangement. ${ROOM_ANCHOR}`,
+    prompt: `Stage this room with luxury high-end furniture. Add a deep navy velvet tufted sofa, white marble side tables with brushed gold legs, a tall brushed-gold designer floor lamp, and a large oil painting in a gold frame on the wall. No rugs. ${ROOM_ANCHOR}`,
   },
   {
     id: 'scandinavian', name: 'Scandinavian', emoji: '❄', color: 'from-sky-200 to-blue-400',
     description: 'White & light wood, cozy hygge',
-    prompt: `Stage this room with Scandinavian minimal furniture. Add a white sofa with light birch wooden legs and linen cushions, a sheepskin throw draped over one armrest, a low natural birch coffee table in the center, a simple white linen pendant lamp, a small fiddle leaf fig plant in a white pot, and a light gray area rug. ${ROOM_ANCHOR}`,
+    prompt: `Stage this room with Scandinavian minimal furniture. Add a white sofa with light birch wooden legs and linen cushions, a sheepskin throw over one armrest, a low natural birch coffee table, and a small fiddle leaf fig plant in a white pot. No rugs. ${ROOM_ANCHOR}`,
   },
   {
     id: 'vacant', name: 'Vacant', emoji: '□', color: 'from-gray-200 to-gray-400',
