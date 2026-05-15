@@ -36,27 +36,8 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Could not process image.' });
   }
 
-  // Sample the average floor color from the lower-center of the original
-  // so we can anchor the AI to the correct floor color in the prompt
-  let floorColorHint = '';
-  try {
-    const sample = await sharp(originalBuffer)
-      .extract({ left: 256, top: 700, width: 512, height: 200 })
-      .resize(1, 1)
-      .removeAlpha()
-      .raw()
-      .toBuffer();
-    const [r, g, b] = sample;
-    const lum = (r * 0.299 + g * 0.587 + b * 0.114);
-    const tone = lum > 180 ? 'light' : lum > 100 ? 'medium' : 'dark';
-    const warmth = r - b > 25 ? 'warm' : r - b < -15 ? 'cool' : 'neutral';
-    floorColorHint = `The floor is ${tone} ${warmth}-toned — keep it exactly the same color and texture.`;
-  } catch { /* non-fatal */ }
-
-  const fullPrompt = `${prompt} ${floorColorHint}`;
-
-  // Mask for OpenAI: only open the bottom 30% for furniture (transparent = editable)
-  // Everything above 70% is opaque (preserved by OpenAI)
+  // Mask for OpenAI: only open the furniture band (60–85%)
+  // Top and bottom remain opaque so AI has context for the room
   const maskBuffer = await generateMask(SIZE, SIZE);
 
   let aiBuffer;
@@ -66,7 +47,7 @@ export default async function handler(req, res) {
       model: 'gpt-image-1',
       image: await toFile(originalBuffer, 'room.png', { type: 'image/png' }),
       mask: await toFile(maskBuffer, 'mask.png', { type: 'image/png' }),
-      prompt: fullPrompt,
+      prompt,
       size: '1024x1024',
       quality: 'high',
     });
@@ -81,24 +62,32 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Soft composite: apply a gradient alpha to the original so it fades out
-    // only at the very bottom (furniture zone). Everywhere else = original pixels.
-    // Fade starts at 65%, fully transparent by 82% — AI furniture shows through below.
+    // Two-ended composite:
+    // Original covers top (ceiling/walls/windows) AND bottom (floor)
+    // AI output shows through only in the middle furniture band
+    //
+    // Original alpha:
+    //   0  → 58%  : 255 (fully original — ceiling, walls)
+    //   58 → 68%  : gradient 255→0
+    //   68 → 80%  : 0   (AI shows through — furniture bodies)
+    //   80 → 90%  : gradient 0→255
+    //   90 → 100% : 255 (fully original — floor)
+
     const { data, info } = await sharp(originalBuffer)
       .ensureAlpha()
       .raw()
       .toBuffer({ resolveWithObject: true });
 
-    const FADE_START = 0.65;
-    const FADE_END = 0.82;
     for (let y = 0; y < info.height; y++) {
-      const ratio = y / info.height;
-      let alpha;
-      if (ratio <= FADE_START) alpha = 255;
-      else if (ratio >= FADE_END) alpha = 0;
-      else alpha = Math.round(255 * (1 - (ratio - FADE_START) / (FADE_END - FADE_START)));
+      const r = y / info.height;
+      let a;
+      if (r <= 0.58)      a = 255;
+      else if (r <= 0.68) a = Math.round(255 * (1 - (r - 0.58) / 0.10));
+      else if (r <= 0.80) a = 0;
+      else if (r <= 0.90) a = Math.round(255 * ((r - 0.80) / 0.10));
+      else                a = 255;
       for (let x = 0; x < info.width; x++) {
-        data[(y * info.width + x) * 4 + 3] = alpha;
+        data[(y * info.width + x) * 4 + 3] = a;
       }
     }
 
@@ -106,7 +95,6 @@ export default async function handler(req, res) {
       raw: { width: info.width, height: info.height, channels: 4 },
     }).png().toBuffer();
 
-    // AI output as base, soft-blended original layered on top
     const finalBuffer = await sharp(aiBuffer)
       .ensureAlpha()
       .composite([{ input: maskedOriginal, blend: 'over' }])
@@ -119,20 +107,22 @@ export default async function handler(req, res) {
   }
 }
 
-// OpenAI mask: opaque = preserve, transparent = AI edits
-// Keep top 70% opaque, only open bottom 30% for furniture
+// Mask for OpenAI — only open furniture band (60–85%)
+// opaque = preserve, transparent = AI edits
 function generateMask(width, height) {
   const pixels = Buffer.alloc(width * height * 4);
   for (let y = 0; y < height; y++) {
-    const ratio = y / height;
-    let alpha;
-    if (ratio < 0.65) alpha = 255;
-    else if (ratio > 0.80) alpha = 0;
-    else alpha = Math.round(255 * (1 - (ratio - 0.65) / 0.15));
+    const r = y / height;
+    let a;
+    if (r < 0.60)       a = 255;
+    else if (r < 0.68)  a = Math.round(255 * (1 - (r - 0.60) / 0.08));
+    else if (r < 0.82)  a = 0;
+    else if (r < 0.90)  a = Math.round(255 * ((r - 0.82) / 0.08));
+    else                a = 255;
     for (let x = 0; x < width; x++) {
       const i = (y * width + x) * 4;
       pixels[i] = 255; pixels[i + 1] = 255; pixels[i + 2] = 255;
-      pixels[i + 3] = alpha;
+      pixels[i + 3] = a;
     }
   }
   return sharp(pixels, { raw: { width, height, channels: 4 } }).png().toBuffer();
